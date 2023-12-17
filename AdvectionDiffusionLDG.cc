@@ -16,8 +16,8 @@ namespace LDG
   )
     : mapping(imapping)
     , triangulation(itriangulation)
-    , u_poly_degree(1)                        // p
-    , sigma_poly_degree(u_poly_degree + 1)    // p+1
+    , u_poly_degree(1)                        // degree of u polynomials
+    , sigma_poly_degree(u_poly_degree)        // degree of \vec{\sigma} polynomials
     , quadrature(sigma_poly_degree + 1)
     , face_quadrature(sigma_poly_degree + 1)
     , fe(	FE_DGQ<dim>(sigma_poly_degree), dim, 
