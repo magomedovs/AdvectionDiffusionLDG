@@ -25,6 +25,7 @@ namespace LDG
     , dof_handler(triangulation)
     , ExactSolution(std::make_unique<Functions::ZeroFunction<dim>>())
     , exact_solution_given(false)
+    , computing_timer(std::cout, TimerOutput::never, TimerOutput::wall_times)
   {
     advection = std::move(iadvection);
     diffusion = std::move(idiffusion);
@@ -65,6 +66,8 @@ namespace LDG
   template <int dim>
   void AdvectionDiffusionProblem<dim>::setup_system()
   {
+    TimerOutput::Scope t(computing_timer, "set up");
+
     dof_handler.distribute_dofs(fe);
     DynamicSparsityPattern dsp(dof_handler.n_dofs());
     DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
@@ -79,6 +82,8 @@ namespace LDG
   template <int dim>
   void AdvectionDiffusionProblem<dim>::assemble_system()
   {
+    TimerOutput::Scope t(computing_timer, "assembling the system");
+
     const auto cell_worker = [&](const auto &cell, auto &scratch_data, auto &copy_data) {
       const FEValues<dim> &fe_v          = scratch_data.reinit(cell);
       const unsigned int   dofs_per_cell = fe_v.dofs_per_cell;
@@ -324,6 +329,8 @@ namespace LDG
   template <int dim>
   void AdvectionDiffusionProblem<dim>::solve()
   {
+    TimerOutput::Scope t(computing_timer, "linear system solve");
+
     SparseDirectUMFPACK A_direct;
     A_direct.initialize(system_matrix);
     A_direct.vmult(solution, system_rhs);
@@ -333,6 +340,8 @@ namespace LDG
   template <int dim>
   void AdvectionDiffusionProblem<dim>::process_solution(const unsigned int cycle)
   {  
+    TimerOutput::Scope t(computing_timer, "process solution");
+
     if (exact_solution_given)
     {
       Vector<float> difference_per_cell(triangulation.n_active_cells());
@@ -404,6 +413,8 @@ namespace LDG
   template <int dim>
   void AdvectionDiffusionProblem<dim>::output_results(const unsigned int cycle)
   {
+    TimerOutput::Scope t(computing_timer, "graphical output");
+
     std::vector<std::string> solution_names(dim, "sigma");
     solution_names.emplace_back("u");
 
@@ -455,6 +466,8 @@ namespace LDG
     unsigned int cycle = 0;
     while (cycle < n_refinements + 1)
     {
+      computing_timer.reset();
+
       std::cout << "Cycle " << cycle << std::endl;
       
       if (cycle != 0)
@@ -484,8 +497,7 @@ namespace LDG
       }
       
       output_results(cycle);
-    
-      std::cout << std::endl;
+      computing_timer.print_summary();
 
       ++cycle;
     }   

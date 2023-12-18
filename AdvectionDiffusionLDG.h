@@ -27,6 +27,7 @@
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/logstream.h>
+#include <deal.II/base/timer.h>
 
 #include <deal.II/meshworker/copy_data.h>
 #include <deal.II/meshworker/mesh_loop.h>
@@ -150,6 +151,7 @@ namespace LDG
     bool exact_solution_given;
 
     ConvergenceTable convergence_table;
+    TimerOutput computing_timer;
   };
 
 
