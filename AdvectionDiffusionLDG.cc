@@ -430,7 +430,9 @@ namespace LDG
                               solution_names,
                               DataOut<dim>::type_dof_data,
                               data_component_interpretation);
-    data_out.build_patches(u_poly_degree + sigma_poly_degree);
+    
+    const unsigned int number_of_subdivisions = u_poly_degree + sigma_poly_degree;
+    data_out.build_patches(number_of_subdivisions);
 
     std::ofstream output(
       "solutionLDG_p" + Utilities::int_to_string(u_poly_degree) + "-" + Utilities::int_to_string(cycle, 2) + ".vtk");

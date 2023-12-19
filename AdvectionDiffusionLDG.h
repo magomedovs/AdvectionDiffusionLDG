@@ -133,7 +133,7 @@ namespace LDG
     const QGauss<dim - 1> face_quadrature;
     
     const FESystem<dim> fe;
-    DoFHandler<dim>   dof_handler;
+    DoFHandler<dim>     dof_handler;
 
     SparsityPattern      sparsity_pattern;
     SparseMatrix<double> system_matrix;

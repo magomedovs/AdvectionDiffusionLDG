@@ -208,10 +208,43 @@ namespace LDG
       : Function<dim>()
     {}
 
-    virtual double value(const Point<dim> &,
+    virtual double value(const Point<dim> &p,
                             const unsigned int component = 0) const override
     {
-      return 0.02;
+      // return 0.02;
+      return 3 + std::sin(p.norm_square());
+    }
+  };
+
+  template <int dim>
+  class GradDiffusionExp : public TensorFunction<1, dim>
+  {
+  public:
+    GradDiffusionExp()
+      : TensorFunction<1, dim>()
+    {}
+
+    virtual Tensor<1, dim> value(const Point<dim> &p) const override
+    {
+      Tensor<1, dim> gradDiffusion;
+      switch (dim)
+        {
+          case 1:
+            gradDiffusion[0] = std::cos(p.norm_square()) * (2*p[0]);
+            break;
+          case 2:
+            gradDiffusion[0] = std::cos(p.norm_square()) * (2*p[0]);
+            gradDiffusion[1] = std::cos(p.norm_square()) * (2*p[1]);
+            break;
+          case 3:
+            gradDiffusion[0] = std::cos(p.norm_square()) * (2*p[0]);
+            gradDiffusion[1] = std::cos(p.norm_square()) * (2*p[1]);
+            gradDiffusion[2] = std::cos(p.norm_square()) * (2*p[2]);
+            break;
+          default:
+            Assert(false, ExcNotImplemented());
+        }
+      return gradDiffusion;
     }
   };
 
@@ -338,8 +371,11 @@ namespace LDG
     {
       AdvectionExp<dim> advection;
       DiffusionExp<dim> diffusion;
-      Tensor<1, dim>    a = advection.value(p);
-      double kappa        = diffusion.value(p);
+      GradDiffusionExp<dim> gradDiffusion;
+      Tensor<1, dim> a          = advection.value(p);
+      double         kappa      = diffusion.value(p);
+      Tensor<1, dim> gradKappa  = gradDiffusion.value(p);
+
       double   sum = 0;
       double gamma = this->width;
       for (unsigned int i = 0; i < this->n_source_centers; ++i)
@@ -348,7 +384,7 @@ namespace LDG
 
         sum += (
           std::exp(-x_minus_xi.norm_square() / (gamma * gamma)) * (-2. / (gamma * gamma)) *
-          (a * x_minus_xi + kappa * ((2. / (gamma * gamma)) * x_minus_xi.norm_square() - dim))
+          ((a - gradKappa) * x_minus_xi + kappa * ((2. / (gamma * gamma)) * x_minus_xi.norm_square() - dim))
         );
       }
 
@@ -440,7 +476,7 @@ int main()
 {
   try
     {
-      // plate_with_a_hole_case(5);
+      // plate_with_a_hole_case(4);
       exp_test_case(5);
     }
   catch (std::exception &exc)
