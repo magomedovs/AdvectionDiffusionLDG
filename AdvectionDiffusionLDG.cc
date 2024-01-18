@@ -111,10 +111,10 @@ namespace LDG
 
         for (unsigned int k = 0; k < dofs_per_cell; ++k)
         {
-          phi_sigma[k]        = fe_v[sigma].value(k, point);
-          div_phi_sigma[k]    = fe_v[sigma].divergence(k, point);
-          phi_u[k]            = fe_v[u].value(k, point);
-          grad_phi_u[k]       = fe_v[u].gradient(k, point);
+          phi_sigma[k]     = fe_v[sigma].value(k, point);
+          div_phi_sigma[k] = fe_v[sigma].divergence(k, point);
+          phi_u[k]         = fe_v[u].value(k, point);
+          grad_phi_u[k]    = fe_v[u].gradient(k, point);
         }
 
         for (unsigned int i = 0; i < fe_v.dofs_per_cell; ++i)
@@ -268,11 +268,11 @@ namespace LDG
 
         for (unsigned int k = 0; k < n_dofs_face; ++k)
         {
-          phi_sigma_jump[k]        = fe_iv[sigma].jump_in_values(k, point);
-          phi_sigma_avg[k]         = fe_iv[sigma].average_of_values(k, point);
-          phi_u_jump[k]            = fe_iv[u].jump_in_values(k, point);
-          phi_u_avg[k]             = fe_iv[u].average_of_values(k, point);
-          phi_u_upwind[k]          = fe_iv[u].value((advection_dot_n > 0), k, point);
+          phi_sigma_jump[k] = fe_iv[sigma].jump_in_values(k, point);
+          phi_sigma_avg[k]  = fe_iv[sigma].average_of_values(k, point);
+          phi_u_jump[k]     = fe_iv[u].jump_in_values(k, point);
+          phi_u_avg[k]      = fe_iv[u].average_of_values(k, point);
+          phi_u_upwind[k]   = fe_iv[u].value((advection_dot_n > 0), k, point);
         }
 
         for (const unsigned int i : fe_iv.dof_indices())
