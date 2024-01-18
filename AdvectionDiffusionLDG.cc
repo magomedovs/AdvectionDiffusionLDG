@@ -136,6 +136,13 @@ namespace LDG
       }
     };
 
+    const auto eta_penalty = [&](const auto &cell, const auto &ncell){
+      const double p = static_cast<double>(u_poly_degree);
+      const double h = std::min(cell->diameter(), ncell->diameter()); // std::max(cell->measure(), ncell->measure());
+      const double eta = 2 * p*p / h;
+      return eta;
+    };
+
     const auto boundary_worker = [&](const auto &        cell,
                                      const unsigned int &face_no,
                                      auto &              scratch_data,
@@ -164,9 +171,7 @@ namespace LDG
         const auto diffusion_q = diffusion->value(q_points[point]);
         const auto u_N         = Neumann_boundary_flux_function->value(q_points[point]);
 
-        const double p = static_cast<double>(u_poly_degree);
-        const double h = cell->diameter(); //cell->measure();
-        const double eta = 2 * p*p / h;
+        const double eta = eta_penalty(cell, cell);
 
         for (unsigned int k = 0; k < dofs_per_cell; ++k)
         {
@@ -256,10 +261,8 @@ namespace LDG
         const auto advection_q = advection->value(q_points[point]);
         const auto diffusion_q = diffusion->value(q_points[point]);
         
-        const Tensor<1, dim> beta = normals[point] / 2.; 
-        const double p = static_cast<double>(u_poly_degree);
-        const double h = std::min(cell->diameter(), ncell->diameter()); // std::max(cell->measure(), ncell->measure());
-        const double eta = 2 * p*p / h;
+        const Tensor<1, dim> beta = normals[point] / 2.;         
+        const double eta = eta_penalty(cell, ncell);
 
         const double advection_dot_n = advection_q * normals[point];
 
