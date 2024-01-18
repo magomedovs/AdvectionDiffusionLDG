@@ -96,6 +96,12 @@ namespace LDG
       std::vector<double> rhs(n_q_points);
       rhs_function->value_list(q_points, rhs);
 
+      std::vector<Tensor<1, dim>> advection_arr(n_q_points);
+      advection->value_list(q_points, advection_arr);
+
+      std::vector<double> diffusion_arr(n_q_points);
+      diffusion->value_list(q_points, diffusion_arr);
+
       const FEValuesExtractors::Vector sigma(0);
       const FEValuesExtractors::Scalar u(dim);
       
@@ -106,9 +112,7 @@ namespace LDG
 
       for (unsigned int point = 0; point < n_q_points; ++point)
       {
-        const auto advection_q = advection->value(q_points[point]);
-        const auto diffusion_q = diffusion->value(q_points[point]);
-
+        
         for (unsigned int k = 0; k < dofs_per_cell; ++k)
         {
           phi_sigma[k]     = fe_v[sigma].value(k, point);
@@ -122,9 +126,9 @@ namespace LDG
           for (unsigned int j = 0; j < fe_v.dofs_per_cell; ++j)
           {
             copy_data.cell_matrix(i, j) += (
-              1./diffusion_q * phi_sigma[i] * phi_sigma[j] +
+              1./diffusion_arr[point] * phi_sigma[i] * phi_sigma[j] +
               -div_phi_sigma[i] * phi_u[j] +
-              -grad_phi_u[i] * advection_q * phi_u[j] +
+              -grad_phi_u[i] * advection_arr[point] * phi_u[j] +
               -grad_phi_u[i] * phi_sigma[j]
             ) * JxW[point];                // dx
           }
@@ -159,6 +163,15 @@ namespace LDG
       std::vector<double> Dirichlet_boundary_values(n_q_points);
       Dirichlet_boundary_function->value_list(q_points, Dirichlet_boundary_values);
 
+      std::vector<Tensor<1, dim>> u_N(n_q_points);
+      Neumann_boundary_flux_function->value_list(q_points, u_N);
+
+      std::vector<Tensor<1, dim>> advection_arr(n_q_points);
+      advection->value_list(q_points, advection_arr);
+
+      std::vector<double> diffusion_arr(n_q_points);
+      diffusion->value_list(q_points, diffusion_arr);
+
       const FEValuesExtractors::Vector sigma(0);
 			const FEValuesExtractors::Scalar u(dim);
       
@@ -167,10 +180,6 @@ namespace LDG
 
       for (unsigned int point = 0; point < n_q_points; ++point)
       {
-        const auto advection_q = advection->value(q_points[point]);
-        const auto diffusion_q = diffusion->value(q_points[point]);
-        const auto u_N         = Neumann_boundary_flux_function->value(q_points[point]);
-
         const double eta = eta_penalty(cell, cell);
 
         for (unsigned int k = 0; k < dofs_per_cell; ++k)
@@ -186,7 +195,7 @@ namespace LDG
             if (cell->face(face_no)->boundary_id() == Dirichlet)
             {
               copy_data.cell_matrix(i, j) += (
-                phi_u[i] * (phi_sigma[j] * normals[point] + diffusion_q * eta * (phi_u[j]))
+                phi_u[i] * (phi_sigma[j] * normals[point] + diffusion_arr[point] * eta * (phi_u[j]))
               ) * JxW[point];                // dx
             }       
             else if (cell->face(face_no)->boundary_id() == Neumann)
@@ -206,14 +215,14 @@ namespace LDG
           {
             copy_data.cell_rhs(i) += (
               -phi_sigma[i] * normals[point] * Dirichlet_boundary_values[point] +
-              -phi_u[i] * Dirichlet_boundary_values[point] * advection_q * normals[point]
-              + phi_u[i] * diffusion_q * eta * Dirichlet_boundary_values[point]
+              -phi_u[i] * Dirichlet_boundary_values[point] * advection_arr[point] * normals[point]
+              + phi_u[i] * diffusion_arr[point] * eta * Dirichlet_boundary_values[point]
             ) * JxW[point];                // dx
           }
           else if (cell->face(face_no)->boundary_id() == Neumann)
           {
             copy_data.cell_rhs(i) += (              
-              -phi_u[i] * u_N * normals[point]        
+              -phi_u[i] * u_N[point] * normals[point]        
             ) * JxW[point];                // dx
           }
           else
@@ -246,6 +255,13 @@ namespace LDG
       const std::vector<Tensor<1, dim>> &normals = fe_iv.get_normal_vectors();
 
       const auto &q_points = fe_iv.get_quadrature_points();
+      const unsigned int n_q_points    = q_points.size();
+
+      std::vector<Tensor<1, dim>> advection_arr(n_q_points);
+      advection->value_list(q_points, advection_arr);
+
+      std::vector<double> diffusion_arr(n_q_points);
+      diffusion->value_list(q_points, diffusion_arr);
 
       const FEValuesExtractors::Vector sigma(0);
 			const FEValuesExtractors::Scalar u(dim);
@@ -256,15 +272,12 @@ namespace LDG
       std::vector<double> phi_u_avg(n_dofs_face);
       std::vector<double> phi_u_upwind(n_dofs_face);
 
-      for (const unsigned int point : fe_iv.quadrature_point_indices())
-      {
-        const auto advection_q = advection->value(q_points[point]);
-        const auto diffusion_q = diffusion->value(q_points[point]);
-        
+      for (unsigned int point = 0; point < n_q_points; ++point)
+      {        
         const Tensor<1, dim> beta = normals[point] / 2.;         
         const double eta = eta_penalty(cell, ncell);
 
-        const double advection_dot_n = advection_q * normals[point];
+        const double advection_dot_n = advection_arr[point] * normals[point];
 
         for (unsigned int k = 0; k < n_dofs_face; ++k)
         {
@@ -282,7 +295,7 @@ namespace LDG
             copy_data_face.cell_matrix(i, j) += (
               phi_sigma_jump[i] * normals[point] * (phi_u_avg[j] - beta * normals[point] * phi_u_jump[j]) +
               phi_u_jump[i] * phi_u_upwind[j] * advection_dot_n +
-              phi_u_jump[i] * (phi_sigma_avg[j] * normals[point] + beta * normals[point] * phi_sigma_jump[j] * normals[point] + diffusion_q * eta * phi_u_jump[j])
+              phi_u_jump[i] * (phi_sigma_avg[j] * normals[point] + beta * normals[point] * phi_sigma_jump[j] * normals[point] + diffusion_arr[point] * eta * phi_u_jump[j])
             ) * JxW[point];                                 // dx
           }
         }
