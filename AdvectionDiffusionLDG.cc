@@ -6,22 +6,22 @@ namespace LDG
   
   template <int dim>
   AdvectionDiffusionProblem<dim>::AdvectionDiffusionProblem(
-    const MappingQ<dim>&  imapping,
-    Triangulation<dim>&   itriangulation,
+    const MappingQ<dim>                           &imapping,
+    Triangulation<dim>                            &itriangulation,
     std::unique_ptr<const TensorFunction<1, dim>> iadvection,
-    std::unique_ptr<const Function<dim>> idiffusion,
-    std::unique_ptr<const Function<dim>> irhs_function,
-    std::unique_ptr<const Function<dim>> iDirichlet_boundary_function,
+    std::unique_ptr<const Function<dim>>          idiffusion,
+    std::unique_ptr<const Function<dim>>          irhs_function,
+    std::unique_ptr<const Function<dim>>          iDirichlet_boundary_function,
     std::unique_ptr<const TensorFunction<1, dim>> iNeumann_boundary_flux_function
   )
     : mapping(imapping)
     , triangulation(itriangulation)
-    , u_poly_degree(1)                        // degree of u polynomials
-    , sigma_poly_degree(u_poly_degree)        // degree of \vec{\sigma} polynomials
+    , u_poly_degree(1)                        /* degree of u polynomials            */
+    , sigma_poly_degree(u_poly_degree)        /* degree of \vec{\sigma} polynomials */
     , quadrature(sigma_poly_degree + 1)
     , face_quadrature(sigma_poly_degree + 1)
-    , fe(	FE_DGQ<dim>(sigma_poly_degree), dim, 
-					FE_DGQ<dim>(u_poly_degree), 1 )		/* 2 fe basis sets, corresponding to \vec{\sigma} and u */
+    , fe(FE_DGQ<dim>(sigma_poly_degree), dim, 
+				 FE_DGQ<dim>(u_poly_degree), 1)		    /* 2 fe basis sets, corresponding to \vec{\sigma} and u */
     , dof_handler(triangulation)
     , ExactSolution(std::make_unique<Functions::ZeroFunction<dim>>())
     , exact_solution_given(false)
@@ -38,11 +38,11 @@ namespace LDG
 
   template <int dim>
   AdvectionDiffusionProblem<dim>::AdvectionDiffusionProblem(
-    Triangulation<dim>&   itriangulation,
+    Triangulation<dim>                            &itriangulation,
     std::unique_ptr<const TensorFunction<1, dim>> iadvection,
-    std::unique_ptr<const Function<dim>> idiffusion,
-    std::unique_ptr<const Function<dim>> irhs_function,
-    std::unique_ptr<const Function<dim>> iDirichlet_boundary_function,
+    std::unique_ptr<const Function<dim>>          idiffusion,
+    std::unique_ptr<const Function<dim>>          irhs_function,
+    std::unique_ptr<const Function<dim>>          iDirichlet_boundary_function,
     std::unique_ptr<const TensorFunction<1, dim>> iNeumann_boundary_flux_function
   )
     : AdvectionDiffusionProblem(MappingQ1<dim>(), 
@@ -85,11 +85,11 @@ namespace LDG
     TimerOutput::Scope t(computing_timer, "assembling the system");
 
     const auto cell_worker = [&](const auto &cell, auto &scratch_data, auto &copy_data) {
-      const FEValues<dim> &fe_v          = scratch_data.reinit(cell);
-      const unsigned int   dofs_per_cell = fe_v.dofs_per_cell;
+      const FEValues<dim> &fe_v         = scratch_data.reinit(cell);
+      const unsigned int  dofs_per_cell = fe_v.dofs_per_cell;
       copy_data.reinit(cell, dofs_per_cell);
 
-      const auto        &q_points    = scratch_data.get_quadrature_points();
+      const auto         &q_points   = scratch_data.get_quadrature_points();
       const unsigned int n_q_points  = q_points.size();
       const std::vector<double> &JxW = scratch_data.get_JxW_values();
 
@@ -143,17 +143,17 @@ namespace LDG
       return eta;
     };
 
-    const auto boundary_worker = [&](const auto &        cell,
+    const auto boundary_worker = [&](const auto         &cell,
                                      const unsigned int &face_no,
-                                     auto &              scratch_data,
-                                     auto &              copy_data) {
+                                     auto               &scratch_data,
+                                     auto               &copy_data) {
       const FEFaceValuesBase<dim> &fe_fv = scratch_data.reinit(cell, face_no);
 
-      const auto        &q_points      = scratch_data.get_quadrature_points();
+      const auto         &q_points     = scratch_data.get_quadrature_points();
       const unsigned int n_q_points    = q_points.size();
       const unsigned int dofs_per_cell = fe_fv.dofs_per_cell;
 
-      const std::vector<double>             &JxW = scratch_data.get_JxW_values();
+      const std::vector<double>         &JxW     = scratch_data.get_JxW_values();
       const std::vector<Tensor<1, dim>> &normals = scratch_data.get_normal_vectors();
 
       std::vector<double> Dirichlet_boundary_values(n_q_points);
@@ -225,21 +225,21 @@ namespace LDG
       }
     };
 
-    const auto face_worker = [&](const auto &        cell,
+    const auto face_worker = [&](const auto         &cell,
                                  const unsigned int &f,
                                  const unsigned int &sf,
-                                 const auto &        ncell,
+                                 const auto         &ncell,
                                  const unsigned int &nf,
                                  const unsigned int &nsf,
-                                 auto &              scratch_data,
-                                 auto &              copy_data) {
+                                 auto               &scratch_data,
+                                 auto               &copy_data) {
       
       const FEInterfaceValues<dim> &fe_iv = scratch_data.reinit(cell, f, sf, ncell, nf, nsf);
 
       copy_data.face_data.emplace_back();
-      CopyDataFace      &copy_data_face = copy_data.face_data.back();
-      const unsigned int n_dofs_face    = fe_iv.n_current_interface_dofs();
-      copy_data_face.joint_dof_indices  = fe_iv.get_interface_dof_indices();
+      CopyDataFace       &copy_data_face = copy_data.face_data.back();
+      const unsigned int n_dofs_face     = fe_iv.n_current_interface_dofs();
+      copy_data_face.joint_dof_indices   = fe_iv.get_interface_dof_indices();
       copy_data_face.cell_matrix.reinit(n_dofs_face, n_dofs_face);
 
       const std::vector<double>         &JxW     = fe_iv.get_JxW_values();

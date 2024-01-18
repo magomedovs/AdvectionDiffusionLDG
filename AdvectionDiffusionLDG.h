@@ -5,6 +5,9 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/function_lib.h>
 #include <deal.II/base/tensor_function.h>
+#include <deal.II/base/convergence_table.h>
+#include <deal.II/base/logstream.h>
+#include <deal.II/base/timer.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/sparse_matrix.h>
@@ -15,20 +18,14 @@
 #include <deal.II/grid/grid_refinement.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
-#include <deal.II/dofs/dof_handler.h>
-#include <deal.II/dofs/dof_tools.h>
-#include <deal.II/numerics/data_out.h>
-
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_interface_values.h>
-
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/derivative_approximation.h>
 #include <deal.II/numerics/vector_tools.h>
-#include <deal.II/base/convergence_table.h>
-#include <deal.II/base/logstream.h>
-#include <deal.II/base/timer.h>
-
 #include <deal.II/meshworker/copy_data.h>
 #include <deal.II/meshworker/mesh_loop.h>
 #include <deal.II/meshworker/scratch_data.h>
@@ -39,7 +36,7 @@ namespace LDG
 
 
   template <typename T>
-  bool are_equal(const T& a, const T& b, const double tol = 1e-10)
+  bool are_equal(const T &a, const T &b, const double tol = 1e-10)
   {
     if (std::abs( a - b ) < tol)
     {
@@ -86,33 +83,33 @@ namespace LDG
   class AdvectionDiffusionProblem
   {
   public:
-    AdvectionDiffusionProblem(
-      const MappingQ<dim>&  imapping,
-      Triangulation<dim>&   itriangulation,
-      std::unique_ptr<const TensorFunction<1, dim>> iadvection,
-      std::unique_ptr<const Function<dim>> idiffusion,
-      std::unique_ptr<const Function<dim>> irhs_function,
-      std::unique_ptr<const Function<dim>> iDirichlet_boundary_function,
-      std::unique_ptr<const TensorFunction<1, dim>> iNeumann_boundary_flux_function = std::make_unique<ZeroTensorFunction<1, dim>>()
-    );
-
-    AdvectionDiffusionProblem(
-      Triangulation<dim>&   itriangulation,
-      std::unique_ptr<const TensorFunction<1, dim>> iadvection,
-      std::unique_ptr<const Function<dim>> idiffusion,
-      std::unique_ptr<const Function<dim>> irhs_function,
-      std::unique_ptr<const Function<dim>> iDirichlet_boundary_function,
-      std::unique_ptr<const TensorFunction<1, dim>> iNeumann_boundary_flux_function = std::make_unique<ZeroTensorFunction<1, dim>>()
-    );
-
-    void set_exact_solution(std::unique_ptr<const Function<dim>> iExactSolution);
-    void run(const unsigned int n_refinements = 0);
-
     enum
     {
       Dirichlet,
       Neumann
     };
+
+    AdvectionDiffusionProblem(
+      const MappingQ<dim>                           &imapping,
+      Triangulation<dim>                            &itriangulation,
+      std::unique_ptr<const TensorFunction<1, dim>> iadvection,
+      std::unique_ptr<const Function<dim>>          idiffusion,
+      std::unique_ptr<const Function<dim>>          irhs_function,
+      std::unique_ptr<const Function<dim>>          iDirichlet_boundary_function,
+      std::unique_ptr<const TensorFunction<1, dim>> iNeumann_boundary_flux_function = std::make_unique<ZeroTensorFunction<1, dim>>()
+    );
+
+    AdvectionDiffusionProblem(
+      Triangulation<dim>                            &itriangulation,
+      std::unique_ptr<const TensorFunction<1, dim>> iadvection,
+      std::unique_ptr<const Function<dim>>          idiffusion,
+      std::unique_ptr<const Function<dim>>          irhs_function,
+      std::unique_ptr<const Function<dim>>          iDirichlet_boundary_function,
+      std::unique_ptr<const TensorFunction<1, dim>> iNeumann_boundary_flux_function = std::make_unique<ZeroTensorFunction<1, dim>>()
+    );
+
+    void set_exact_solution(std::unique_ptr<const Function<dim>> iExactSolution);
+    void run(const unsigned int n_refinements = 0);
 
   private:
     void setup_system();
@@ -122,8 +119,8 @@ namespace LDG
     void process_solution(const unsigned int cycle);
     void output_results(const unsigned int cycle);
 
-    const MappingQ<dim>    mapping;
-    Triangulation<dim>&    triangulation;
+    const MappingQ<dim> mapping;
+    Triangulation<dim>  &triangulation;
     
     using ScratchData = MeshWorker::ScratchData<dim>;
 
@@ -143,8 +140,8 @@ namespace LDG
     std::unique_ptr<const TensorFunction<1, dim>> advection;
     std::unique_ptr<const Function<dim>>          diffusion;
 
-    std::unique_ptr<const Function<dim>> rhs_function;
-    std::unique_ptr<const Function<dim>> Dirichlet_boundary_function;
+    std::unique_ptr<const Function<dim>>          rhs_function;
+    std::unique_ptr<const Function<dim>>          Dirichlet_boundary_function;
     std::unique_ptr<const TensorFunction<1, dim>> Neumann_boundary_flux_function;
 
     std::unique_ptr<const Function<dim>> ExactSolution;
